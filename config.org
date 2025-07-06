@@ -1,0 +1,1786 @@
+#+TITLE: Emacs config
+#+AUTHOR: Mirakernel
+#+STARTUP: overview 
+ 
+* Конфигурация
+:PROPERTIES:
+:header-args: emacs-lisp :tangle "init.el" :mkdirp yes
+:END:
+** Пакетный менеджер
+#+begin_src emacs-lisp
+(require 'package)
+(setq package-archives '(("melpa" . "https://melpa.org/packages/")
+                         ("elpa" . "https://elpa.gnu.org/packages/")))
+(package-initialize)
+(unless package-archive-contents
+  (package-refresh-contents))
+(require 'use-package)
+(setq use-package-always-ensure t)
+#+end_src
+
+** Тема
+
+#+begin_src emacs-lisp
+(setq visible-bell t)
+(tool-bar-mode -1)
+(menu-bar-mode -1)
+(scroll-bar-mode -1)
+(global-display-line-numbers-mode 1)
+#+end_src
+
+*** Максимизация фрейма
+#+begin_src emacs-lisp
+; Fullscreen для нового окна
+(setq ns-use-native-fullscreen :true)
+(add-to-list 'default-frame-alist '(fullscreen . fullscreen))
+#+end_src
+
+*** Прозрачность
+#+begin_src emacs-lisp
+; Прозрачность
+(set-frame-parameter nil 'alpha-background 94)
+(add-to-list 'default-frame-alist '(alpha-background . 90))
+#+end_src
+
+*** Шрифт
+#+begin_src emacs-lisp
+(defvar my/default-font-family "UbuntuMono Nerd Font"
+  "Font family name.")
+  
+(defvar my/default-font-size 14
+  "Default font size.")
+
+(defun my/set-frame-font (&optional frame)
+  (with-selected-frame (or frame (selected-frame))
+    (when (display-graphic-p)
+      (let ((font-spec (format "%s-%s" 
+                              my/default-font-family 
+                              my/default-font-size)))
+        ;; Проверяем доступность шрифта
+        (if (find-font (font-spec :name font-spec))
+            (set-face-attribute 'default nil :font font-spec)
+          (warn "Font %s not available!" font-spec))))))
+
+;; Инициализация для текущего фрейма
+(my/set-frame-font)
+
+;; Для новых фреймов
+(add-hook 'after-make-frame-functions
+          (lambda (frame)
+            (my/set-frame-font frame)))
+#+end_src
+
+*** My Breeze
+Моя тема основанная на breeze с фоном цвета фуксия и циановым акцентом
+
+#+begin_src emacs-lisp
+(use-package autothemer)
+(require 'autothemer)
+
+(autothemer-deftheme 
+ breeze "Dark Breeze KDE theme with purple background and accent color #00d3b8"
+ 
+ ;; Specify the color classes used by the theme
+ ((((class color) (min-colors #xFFFFFF))
+   ((class color) (min-colors #xFF)))
+  
+  ;; Color palette - Dark Breeze inspired colors
+  ;; Background and basic colors
+  (bg-main        "#2d122d" "#2d122d")   ; Main background (dark purple)
+  (bg-alt         "#2c1c2f" "#2c1c2f")   ; Alternative background (saturated purple)
+  (bg-dim         "#36283b" "#36283b")   ; Dimmed background (pale purple)
+  (bg-active      "#3daee9" "#0080ff")   ; Active background
+  (fg-main        "#fcfcfc" "#ffffff")   ; Main foreground (light gray-white)
+  (fg-alt         "#bdc3c7" "#c0c0c0")   ; Alternative foreground
+  (fg-dim         "#7f8c8d" "#808080")   ; Dimmed foreground
+  
+  ;; Primary accent color
+  (accent-main    "#00d3b8" "#00ffcc")   ; Main accent color (custom teal/cyan)
+  (accent-bright  "#1de9ce" "#33ffdd")   ; Brighter accent
+  (accent-dim     "#00a693" "#009980")   ; Dimmed accent
+  
+  ;; Breeze dark palette
+  (breeze-blue    "#3daee9" "#0080ff")   ; Primary blue
+  (breeze-red     "#da4453" "#ff4060")   ; Error red
+  (breeze-green   "#27ae60" "#00ff40")   ; Success green
+  (breeze-yellow  "#fdbc4b" "#ffff40")   ; Warning yellow
+  (breeze-purple  "#8e44ad" "#a060ff")   ; Purple
+  (breeze-cyan    "#1abc9c" "#00ffcc")   ; Cyan (close to accent)
+  (breeze-orange  "#e67e22" "#ff8040")   ; Orange
+  (breeze-gray    "#95a5a6" "#a0a0a0")   ; Gray
+  
+  ;; Semantic colors
+  (selection-bg   "#00d3b8" "#00ffcc")   ; Selection background (accent)
+  (selection-fg   "#2d122d" "#2d122d")   ; Selection foreground (dark for contrast)
+  (highlight-bg   "#36283b" "#36283b")   ; Highlight background
+  (match-bg       "#fdbc4b" "#ffff40")   ; Search match
+  (match-fg       "#2d122d" "#2d122d")   ; Search match foreground
+  (error-fg       "#da4453" "#ff4060")   ; Error text
+  (warning-fg     "#fdbc4b" "#ffff40")   ; Warning text
+  (success-fg     "#27ae60" "#00ff40")   ; Success text
+  
+  ;; UI element colors
+  (border-color   "#36283b" "#36283b")   ; Border color
+  (modeline-bg    "#36283b" "#36283b")   ; Mode line background
+  (modeline-fg    "#fcfcfc" "#ffffff")   ; Mode line foreground
+  (comment-fg     "#7f8c8d" "#808080")   ; Comment color
+  (string-fg      "#27ae60" "#00ff40")   ; String color
+  (keyword-fg     "#00d3b8" "#00ffcc")   ; Keyword color (accent)
+  (function-fg    "#3daee9" "#0080ff")   ; Function color
+  (variable-fg    "#e67e22" "#ff8040")   ; Variable color
+  (type-fg        "#8e44ad" "#a060ff")   ; Type color
+  (constant-fg    "#da4453" "#ff4060")   ; Constant color
+  (number-fg      "#fdbc4b" "#ffff40")   ; Number color
+  (builtin-fg     "#1abc9c" "#00ffcc"))  ; Builtin color
+ 
+ ;; Face specifications
+ (
+  ;; Basic faces
+  (default (:foreground fg-main :background bg-main))
+  (cursor (:background accent-main))
+  (region (:background selection-bg :foreground selection-fg))
+  (highlight (:background highlight-bg))
+  (secondary-selection (:background bg-dim))
+  (trailing-whitespace (:background error-fg))
+  (escape-glyph (:foreground accent-main))
+  (homoglyph (:foreground warning-fg))
+  (nobreak-space (:foreground warning-fg :underline t))
+  (nobreak-hyphen (:foreground warning-fg))
+  
+  ;; Font lock (syntax highlighting)
+  (font-lock-builtin-face (:foreground builtin-fg :weight 'semi-bold))
+  (font-lock-comment-face (:foreground comment-fg :slant 'italic))
+  (font-lock-comment-delimiter-face (:inherit 'font-lock-comment-face))
+  (font-lock-constant-face (:foreground constant-fg :weight 'semi-bold))
+  (font-lock-doc-face (:foreground comment-fg :slant 'italic))
+  (font-lock-function-name-face (:foreground function-fg :weight 'bold))
+  (font-lock-keyword-face (:foreground keyword-fg :weight 'bold))
+  (font-lock-negation-char-face (:foreground error-fg :weight 'bold))
+  (font-lock-number-face (:foreground number-fg))
+  (font-lock-preprocessor-face (:foreground type-fg))
+  (font-lock-regexp-grouping-construct (:weight 'bold))
+  (font-lock-regexp-grouping-backslash (:weight 'bold))
+  (font-lock-string-face (:foreground string-fg))
+  (font-lock-type-face (:foreground type-fg :weight 'semi-bold))
+  (font-lock-variable-name-face (:foreground variable-fg))
+  (font-lock-warning-face (:foreground warning-fg :weight 'bold))
+  
+  ;; Mode line
+  (mode-line (:background modeline-bg :foreground modeline-fg :box (:line-width 1 :color border-color)))
+  (mode-line-inactive (:background bg-dim :foreground fg-dim :box (:line-width 1 :color border-color)))
+  (mode-line-buffer-id (:foreground accent-main :weight 'bold))
+  (mode-line-emphasis (:foreground accent-bright :weight 'bold))
+  (mode-line-highlight (:box (:line-width 2 :color accent-main)))
+  
+  ;; Header line
+  (header-line (:background bg-dim :foreground fg-main))
+  
+  ;; Minibuffer
+  (minibuffer-prompt (:foreground accent-main :weight 'bold))
+  
+  ;; Fringe and line numbers
+  (fringe (:background bg-main :foreground fg-dim))
+  (line-number (:background bg-main :foreground fg-dim))
+  (line-number-current-line (:background bg-main :foreground accent-main :weight 'bold))
+  
+  ;; Window dividers
+  (window-divider (:foreground border-color))
+  (window-divider-first-pixel (:foreground border-color))
+  (window-divider-last-pixel (:foreground border-color))
+  
+  ;; Links
+  (link (:foreground accent-main :underline t))
+  (link-visited (:foreground breeze-purple :underline t))
+  
+  ;; Buttons
+  (button (:underline t :weight 'bold :foreground accent-main))
+  (custom-button (:background bg-alt :foreground fg-main :box (:line-width 2 :style 'released-button)))
+  (custom-button-mouse (:background highlight-bg :foreground fg-main))
+  (custom-button-pressed (:background bg-dim :foreground fg-main :box (:line-width 2 :style 'pressed-button)))
+  
+  ;; Error, warning, success
+  (error (:foreground error-fg :weight 'bold))
+  (warning (:foreground warning-fg :weight 'bold))
+  (success (:foreground success-fg :weight 'bold))
+  
+  ;; Search and matching
+  (isearch (:background match-bg :foreground match-fg :weight 'bold))
+  (lazy-highlight (:background bg-dim :foreground accent-main))
+  (match (:background match-bg :foreground match-fg :weight 'bold))
+  (query-replace (:background warning-fg :foreground bg-main))
+  
+  ;; Show paren
+  (show-paren-match (:background accent-main :foreground bg-main :weight 'bold))
+  (show-paren-mismatch (:background error-fg :foreground fg-main :weight 'bold))
+  
+  ;; Completions
+  (completions-annotations (:foreground fg-dim))
+  (completions-common-part (:foreground accent-main :weight 'bold))
+  (completions-first-difference (:foreground warning-fg :weight 'bold))
+  
+  ;; Org mode
+  (org-level-1 (:foreground accent-main :weight 'bold :height 1.3))
+  (org-level-2 (:foreground function-fg :weight 'bold :height 1.2))
+  (org-level-3 (:foreground variable-fg :weight 'bold :height 1.1))
+  (org-level-4 (:foreground type-fg :weight 'bold))
+  (org-level-5 (:foreground breeze-cyan :weight 'bold))
+  (org-level-6 (:foreground breeze-purple :weight 'bold))
+  (org-level-7 (:foreground breeze-orange :weight 'bold))
+  (org-level-8 (:foreground breeze-gray :weight 'bold))
+  (org-document-title (:foreground accent-bright :weight 'bold :height 1.5))
+  (org-document-info (:foreground fg-alt))
+  (org-meta-line (:foreground comment-fg :slant 'italic))
+  (org-block (:background bg-alt :foreground fg-main))
+  (org-block-begin-line (:foreground comment-fg :background bg-alt))
+  (org-block-end-line (:foreground comment-fg :background bg-alt))
+  (org-code (:background bg-alt :foreground constant-fg))
+  (org-verbatim (:background bg-alt :foreground string-fg))
+  (org-table (:foreground fg-main))
+  (org-todo (:foreground error-fg :weight 'bold))
+  (org-done (:foreground success-fg :weight 'bold))
+  (org-headline-done (:foreground fg-dim))
+  (org-link (:foreground accent-main :underline t))
+  (org-date (:foreground breeze-blue))
+  (org-special-keyword (:foreground comment-fg))
+  
+  ;; Dired
+  (dired-directory (:foreground accent-main :weight 'bold))
+  (dired-header (:foreground function-fg :weight 'bold))
+  (dired-ignored (:foreground fg-dim))
+  (dired-flagged (:foreground error-fg :weight 'bold))
+  (dired-marked (:foreground success-fg :weight 'bold))
+  (dired-symlink (:foreground breeze-cyan))
+  (dired-warning (:foreground warning-fg :weight 'bold))
+  (dired-perm-write (:foreground warning-fg))
+  
+  ;; Compilation
+  (compilation-error (:foreground error-fg :weight 'bold))
+  (compilation-warning (:foreground warning-fg :weight 'bold))
+  (compilation-info (:foreground success-fg :weight 'bold))
+  (compilation-line-number (:foreground fg-dim))
+  (compilation-column-number (:foreground fg-dim))
+  (compilation-mode-line-exit (:foreground success-fg))
+  (compilation-mode-line-fail (:foreground error-fg))
+  (compilation-mode-line-run (:foreground accent-main))
+  
+  ;; Ido
+  (ido-first-match (:foreground accent-main :weight 'bold))
+  (ido-only-match (:foreground success-fg :weight 'bold))
+  (ido-subdir (:foreground function-fg))
+  (ido-virtual (:foreground comment-fg))
+  (ido-incomplete-regexp (:foreground error-fg))
+  
+  ;; Company
+  (company-tooltip (:background bg-alt :foreground fg-main))
+  (company-tooltip-selection (:background selection-bg :foreground selection-fg))
+  (company-tooltip-common (:foreground accent-main :weight 'bold))
+  (company-tooltip-common-selection (:foreground selection-fg :weight 'bold))
+  (company-scrollbar-bg (:background bg-dim))
+  (company-scrollbar-fg (:background fg-dim))
+  (company-preview (:background highlight-bg))
+  (company-preview-common (:foreground accent-main :background highlight-bg))
+  (company-tooltip-annotation (:foreground fg-dim))
+  (company-tooltip-annotation-selection (:foreground selection-fg))
+  
+  ;; Ivy/Counsel
+  (ivy-current-match (:background selection-bg :foreground selection-fg))
+  (ivy-minibuffer-match-face-1 (:foreground accent-main))
+  (ivy-minibuffer-match-face-2 (:foreground accent-bright :weight 'bold))
+  (ivy-minibuffer-match-face-3 (:foreground function-fg :weight 'bold))
+  (ivy-minibuffer-match-face-4 (:foreground variable-fg :weight 'bold))
+  (ivy-confirm-face (:foreground success-fg))
+  (ivy-match-required-face (:foreground error-fg))
+  (ivy-virtual (:foreground comment-fg))
+  (ivy-action (:foreground function-fg))
+  
+  ;; Helm
+  (helm-selection (:background selection-bg :foreground selection-fg))
+  (helm-match (:foreground accent-main :weight 'bold))
+  (helm-source-header (:foreground function-fg :weight 'bold :height 1.2))
+  (helm-candidate-number (:foreground fg-dim))
+  (helm-ff-directory (:foreground accent-main :weight 'bold))
+  (helm-ff-file (:foreground fg-main))
+  (helm-ff-executable (:foreground success-fg))
+  (helm-ff-symlink (:foreground breeze-cyan))
+  
+  ;; Which-key
+  (which-key-key-face (:foreground accent-main :weight 'bold))
+  (which-key-separator-face (:foreground fg-dim))
+  (which-key-note-face (:foreground comment-fg))
+  (which-key-command-description-face (:foreground fg-main))
+  (which-key-group-description-face (:foreground function-fg))
+  (which-key-local-map-description-face (:foreground variable-fg))
+  
+  ;; Magit
+  (magit-branch-local (:foreground accent-main :weight 'bold))
+  (magit-branch-remote (:foreground success-fg :weight 'bold))
+  (magit-branch-current (:foreground accent-bright :weight 'bold :box t))
+  (magit-hash (:foreground fg-dim))
+  (magit-tag (:foreground warning-fg :weight 'bold))
+  (magit-section-heading (:foreground function-fg :weight 'bold))
+  (magit-section-highlight (:background highlight-bg))
+  (magit-diff-added (:background "#1e3a1e" :foreground success-fg))
+  (magit-diff-removed (:background "#3a1e1e" :foreground error-fg))
+  (magit-diff-added-highlight (:background "#2a4a2a" :foreground success-fg))
+  (magit-diff-removed-highlight (:background "#4a2a2a" :foreground error-fg))
+  (magit-diff-context (:foreground fg-alt))
+  (magit-diff-context-highlight (:background bg-alt :foreground fg-alt))
+  (magit-diffstat-added (:foreground success-fg))
+  (magit-diffstat-removed (:foreground error-fg))
+  
+  ;; Flycheck
+  (flycheck-error (:underline (:color error-fg :style 'wave)))
+  (flycheck-warning (:underline (:color warning-fg :style 'wave)))
+  (flycheck-info (:underline (:color accent-main :style 'wave)))
+  (flycheck-fringe-error (:foreground error-fg))
+  (flycheck-fringe-warning (:foreground warning-fg))
+  (flycheck-fringe-info (:foreground accent-main))
+  
+  ;; Whitespace mode
+  (whitespace-space (:foreground fg-dim))
+  (whitespace-tab (:foreground fg-dim))
+  (whitespace-newline (:foreground fg-dim))
+  (whitespace-trailing (:background error-fg :foreground bg-main))
+  (whitespace-line (:background bg-dim))
+  (whitespace-empty (:background warning-fg :foreground bg-main))
+  
+  ;; Rainbow delimiters
+  (rainbow-delimiters-depth-1-face (:foreground accent-main))
+  (rainbow-delimiters-depth-2-face (:foreground success-fg))
+  (rainbow-delimiters-depth-3-face (:foreground warning-fg))
+  (rainbow-delimiters-depth-4-face (:foreground function-fg))
+  (rainbow-delimiters-depth-5-face (:foreground breeze-cyan))
+  (rainbow-delimiters-depth-6-face (:foreground constant-fg))
+  (rainbow-delimiters-depth-7-face (:foreground variable-fg))
+  (rainbow-delimiters-depth-8-face (:foreground type-fg))
+  (rainbow-delimiters-depth-9-face (:foreground breeze-purple))
+  (rainbow-delimiters-unmatched-face (:foreground error-fg :weight 'bold))
+  
+  ;; Web mode
+  (web-mode-html-tag-face (:foreground accent-main))
+  (web-mode-html-tag-bracket-face (:foreground fg-alt))
+  (web-mode-html-attr-name-face (:foreground variable-fg))
+  (web-mode-html-attr-value-face (:foreground string-fg))
+  (web-mode-css-selector-face (:foreground function-fg))
+  (web-mode-css-property-name-face (:foreground accent-main))
+  (web-mode-css-at-rule-face (:foreground type-fg))
+  (web-mode-javascript-string-face (:foreground string-fg))
+  (web-mode-javascript-comment-face (:foreground comment-fg))
+  
+  ;; Markdown mode
+  (markdown-header-face-1 (:foreground accent-main :weight 'bold :height 1.3))
+  (markdown-header-face-2 (:foreground function-fg :weight 'bold :height 1.2))
+  (markdown-header-face-3 (:foreground variable-fg :weight 'bold :height 1.1))
+  (markdown-header-face-4 (:foreground type-fg :weight 'bold))
+  (markdown-header-face-5 (:foreground breeze-cyan :weight 'bold))
+  (markdown-header-face-6 (:foreground breeze-purple :weight 'bold))
+  (markdown-code-face (:background bg-alt :foreground constant-fg))
+  (markdown-inline-code-face (:background bg-alt :foreground constant-fg))
+  (markdown-link-face (:foreground accent-main :underline t))
+  (markdown-url-face (:foreground breeze-blue :underline t))
+  (markdown-italic-face (:slant 'italic))
+  (markdown-bold-face (:weight 'bold))
+  
+  ;; Term colors
+  (term-color-black (:foreground bg-main :background bg-main))
+  (term-color-red (:foreground error-fg :background error-fg))
+  (term-color-green (:foreground success-fg :background success-fg))
+  (term-color-yellow (:foreground warning-fg :background warning-fg))
+  (term-color-blue (:foreground function-fg :background function-fg))
+  (term-color-magenta (:foreground type-fg :background type-fg))
+  (term-color-cyan (:foreground accent-main :background accent-main))
+  (term-color-white (:foreground fg-main :background fg-main))
+  )
+ 
+ ;; Custom variables
+ (custom-theme-set-variables 'breeze
+   `(ansi-color-names-vector [,bg-main
+                              ,error-fg
+                              ,success-fg
+                              ,warning-fg
+                              ,function-fg
+                              ,type-fg
+                              ,accent-main
+                              ,fg-main])
+   ;; hl-todo colors
+   `(hl-todo-keyword-faces '(("TODO" . ,warning-fg)
+                             ("FIXME" . ,error-fg)
+                             ("DEBUG" . ,function-fg)
+                             ("GOTCHA" . ,error-fg)
+                             ("STUB" . ,warning-fg)
+                             ("NOTE" . ,accent-main)
+                             ("DEPRECATED" . ,fg-dim)
+                             ("HACK" . ,constant-fg)
+                             ("REVIEW" . ,type-fg)))
+   ;; Compilation colors
+   `(compilation-message-face 'default)
+   ;; Org todo colors
+   `(org-todo-keyword-faces '(("TODO" . ,error-fg)
+                              ("NEXT" . ,warning-fg)
+                              ("STARTED" . ,accent-main)
+                              ("DONE" . ,success-fg)
+                              ("WAITING" . ,fg-dim)
+                              ("HOLD" . ,fg-dim)
+                              ("CANCELLED" . ,fg-dim)
+                              ("SOMEDAY" . ,comment-fg)))
+   ;; Fill column indicator
+   `(fill-column-indicator t)
+   ;; Frame background
+   `(frame-background-mode 'dark)
+   ;; Cursor color
+   `(cursor-color ,accent-main)
+   ;; Electric pair
+   `(electric-pair-pairs '((?\{ . ?\})
+                           (?\[ . ?\])
+                           (?\( . ?\))
+                           (?\" . ?\")))))
+
+;;;###autoload
+(when (and (boundp 'custom-theme-load-path) load-file-name)
+  (add-to-list 'custom-theme-load-path
+               (file-name-as-directory (file-name-directory load-file-name))))
+
+(provide-theme 'breeze)
+#+end_src
+
+*** Nord
+#+begin_src emacs-lisp
+(use-package nord-theme)
+#+end_src
+
+*** Текущая тема
+Рабочий ноутбук thunder
+Fedora с KDE Plasma,
+с акцентным цветом циан для kde и терминалом цвета фуксия
+использую my-breeze
+
+Личный ноутбук tsunami
+Gentoo с Nord Theme
+использую nord
+
+#+begin_src emacs-lisp
+(let ((hostname (string-trim (shell-command-to-string "hostname"))))
+  (pcase hostname
+    ("tsunami"
+     (if (daemonp)
+         ;; Для демона: загружать тему при создании каждого фрейма
+         (add-hook 'after-make-frame-functions
+                   (lambda (frame)
+                     (with-selected-frame frame
+                       (load-theme 'nord t))))
+       ;; В обычном режиме загружаем тему сразу
+       (load-theme 'nord t)))
+    
+    ("thunder"
+     (load-theme 'breeze t))
+    
+    (_
+     (message "Неизвестный пк %s" hostname))))
+#+end_src
+
+** Русский ввод
+#+begin_src emacs-lisp
+(use-package reverse-im
+  :custom
+  (reverse-im-input-methods '("russian-computer"))  
+  :config
+  (reverse-im-mode t))
+#+end_src
+** Evil
+#+begin_src emacs-lisp
+(require 'windmove)
+(defun my/toggle-window-horizontally()
+  (interactive)
+  (let ((next-win (or (windmove-find-other-window 'right) (windmove-find-other-window 'left))))
+    (select-window (or next-win (progn
+				  (split-window-horizontally)
+				  (windmove-find-other-window 'right))))))
+
+(defun my/toggle-window-vertically()
+  (interactive)
+  (let ((next-win (or
+		   (and
+		    (not (minibufferp (window-buffer (windmove-find-other-window 'down))))
+		    (windmove-find-other-window 'down))
+		   (windmove-find-other-window 'up))))
+    (select-window (or next-win
+		       (progn
+			 (split-window-vertically)
+			 (windmove-find-other-window 'down))))))
+(use-package evil
+  :init
+  (use-package undo-fu)
+  (setq evil-undo-system 'undo-fu)
+  (setq evil-want-fine-undo 'fine)
+  (setq evil-want-integration t) ;; This is optional since it's already set to t by default.
+  (setq evil-want-keybinding nil)
+  :config
+  (evil-mode 1)
+  (evil-set-leader 'normal (kbd ","))
+  (evil-define-key 'normal 'global-map
+    ;; Самописная хрень
+    (kbd "SPC TAB") 'my/toggle-window-horizontally
+    (kbd "C-<tab>") 'my/toggle-window-vertically
+    ;; Окна: переход между окнами
+    (kbd "<leader>wh") 'evil-window-left
+    (kbd "<leader>wj") 'evil-window-down
+    (kbd "<leader>wk") 'evil-window-up
+    (kbd "<leader>wl") 'evil-window-right
+
+    ;; Splits
+    (kbd "<leader>wv") 'split-window-right ;; вертикальный сплит
+    (kbd "<leader>ws") 'split-window-below ;; горизонтальный сплит
+
+    ;; Закрыть/максимизировать
+    (kbd "<leader>wd") 'delete-window	       ;; убрать текущее окно
+    (kbd "<leader>wD") 'kill-buffer-and-window ;; удалить буфер + окно
+    (kbd "<leader>wm") 'delete-other-windows ;; максимизировать текущее окно
+
+    ;; Буферы: навигация и управление
+    (kbd "<leader>bb") 'switch-to-buffer
+    (kbd "<leader>bn") 'next-buffer
+    (kbd "<leader>bp") 'previous-buffer
+    (kbd "<leader>bk") 'kill-this-buffer
+    (kbd "<leader>br") 'rename-buffer
+    ;;files
+    (kbd "<leader>f") 'find-file))
+
+;; Evil Collection для дополнительных bindings
+(use-package evil-collection
+  :ensure t
+  :after evil
+  :config
+  (evil-collection-init)
+  ;; Специфичные настройки для CIDER
+  (with-eval-after-load 'cider
+    (evil-collection-cider-setup)))
+#+end_src
+** Программирование
+*** Скобки
+#+begin_src emacs-lisp
+;; Улучшенная работа со скобками
+(use-package paredit
+  :ensure t
+  :hook ((clojure-mode . paredit-mode)
+         (emacs-lisp-mode . paredit-mode)
+         (lisp-mode . paredit-mode)
+         (cider-repl-mode . paredit-mode))
+  :config
+  (evil-define-key 'normal paredit-mode-map
+    (kbd "<leader> k") 'paredit-kill          ; удалить до конца формы
+    (kbd "<leader> w") 'paredit-wrap-round    ; обернуть в скобки
+    (kbd "<leader> s") 'paredit-splice-sexp)) ; убрать скобки
+;; Подсветка скобок
+(use-package rainbow-delimiters
+  :hook (prog-mode . rainbow-delimiters-mode))
+#+end_src
+*** Sidebar
+#+begin_src emacs-lisp
+
+;;; ide-sidebar-config.el --- IDE-style sidebar configuration for Emacs
+
+;;; Commentary:
+;; Configuration for IDE-style sidebar with file explorer, outline, and other panels
+;; Designed to work with Evil Mode and leader key setup
+
+;;; Code:
+
+;; Treemacs - главный файловый менеджер
+(use-package treemacs
+  :ensure t
+  :defer t
+  :config
+  (progn
+    ;; Настройки внешнего вида
+    (setq treemacs-collapse-dirs                   3
+          treemacs-deferred-git-apply-delay        0.5
+          treemacs-directory-name-transformer      #'identity
+          treemacs-display-in-side-window          t
+          treemacs-eldoc-display                   'simple
+          treemacs-file-event-delay                2000
+          treemacs-file-extension-regex            treemacs-last-period-regex-value
+          treemacs-file-follow-delay               0.2
+          treemacs-file-name-transformer           #'identity
+          treemacs-follow-after-init               t
+          treemacs-expand-after-init               t
+          treemacs-find-workspace-method           'find-for-file-or-pick-first
+          treemacs-git-command-pipe                ""
+          treemacs-goto-tag-strategy               'refetch-index
+          treemacs-header-scroll-indicators        '(nil . "^^^^^^")
+          treemacs-hide-dot-git-directory          t
+          treemacs-indentation                     2
+          treemacs-indentation-string              " "
+          treemacs-is-never-other-window           nil
+          treemacs-max-git-entries                 5000
+          treemacs-missing-project-action          'ask
+          treemacs-move-forward-on-expand          nil
+          treemacs-no-png-images                   nil
+          treemacs-no-delete-other-windows         t
+          treemacs-project-follow-cleanup          nil
+          treemacs-persist-file                    (expand-file-name ".cache/treemacs-persist" user-emacs-directory)
+          treemacs-position                        'left
+          treemacs-read-string-input               'from-child-frame
+          treemacs-recenter-distance               0.1
+          treemacs-recenter-after-file-follow      nil
+          treemacs-recenter-after-tag-follow       nil
+          treemacs-recenter-after-project-jump     'always
+          treemacs-recenter-after-project-expand   'on-distance
+          treemacs-litter-directories              '("/node_modules" "/.venv" "/.cask")
+          treemacs-project-follow-into-home        nil
+          treemacs-show-cursor                     nil
+          treemacs-show-hidden-files               t
+          treemacs-silent-filewatch                nil
+          treemacs-silent-refresh                  nil
+          treemacs-sorting                         'alphabetic-asc
+          treemacs-select-when-already-in-treemacs 'move-back
+          treemacs-space-between-root-nodes        t
+          treemacs-tag-follow-cleanup              t
+          treemacs-tag-follow-delay                1.5
+          treemacs-text-scale                      nil
+          treemacs-user-mode-line-format           nil
+          treemacs-user-header-line-format         nil
+          treemacs-wide-toggle-width               70
+          treemacs-width                           35
+          treemacs-width-increment                 1
+          treemacs-width-is-initially-locked       t
+          treemacs-workspace-switch-cleanup        nil)
+
+    ;; Настройка иконок
+    (treemacs-resize-icons 22)
+
+    ;; Настройка фильтров
+    (treemacs-follow-mode t)
+    (treemacs-filewatch-mode t)
+    (treemacs-fringe-indicator-mode 'always)
+    (treemacs-hide-gitignored-files-mode nil))
+  
+  ;; Evil bindings для Treemacs
+  :bind
+  (:map global-map
+        ([f8]        . treemacs)
+        ("C-x t 1"   . treemacs-delete-other-windows)
+        ("C-x t t"   . treemacs)
+        ("C-x t d"   . treemacs-select-directory)
+        ("C-x t B"   . treemacs-bookmark)
+        ("C-x t C-t" . treemacs-find-file)
+        ("C-x t M-t" . treemacs-find-tag)))
+
+;; Evil интеграция с Treemacs
+(use-package treemacs-evil
+  :after (treemacs evil)
+  :ensure t
+  :config
+  ;; Дополнительные Evil bindings
+  (evil-define-key 'normal treemacs-mode-map
+    "h" 'treemacs-root-up
+    "l" 'treemacs-root-down
+    "H" 'treemacs-collapse-parent-node
+    "L" 'treemacs-expand-parent-node
+    "r" 'treemacs-refresh
+    "R" 'treemacs-rename-file
+    "d" 'treemacs-delete-file
+    "c" 'treemacs-copy-file
+    "m" 'treemacs-move-file
+    "+" 'treemacs-create-file
+    "M" 'treemacs-create-dir
+    "y" 'treemacs-copy-path-at-point
+    "Y" 'treemacs-copy-absolute-path-at-point
+    "s" 'treemacs-resort
+    "b" 'treemacs-add-bookmark
+    "?" 'treemacs-helpful-hydra
+    "w" 'treemacs-set-width))
+
+;; Projectile интеграция
+(use-package treemacs-projectile
+  :after (treemacs projectile)
+  :ensure t)
+
+;; Magit интеграция
+(use-package treemacs-magit
+  :after (treemacs magit)
+  :ensure t)
+
+;; Perspective интеграция
+(use-package treemacs-persp
+  :after (treemacs persp-mode)
+  :ensure t
+  :config
+  (treemacs-set-scope-type 'Perspectives))
+
+;; Tab Bar интеграция
+(use-package treemacs-tab-bar
+  :after (treemacs)
+  :ensure t
+  :config
+  (treemacs-set-scope-type 'Tabs))
+
+;; Imenu List - боковая панель с содержанием файла
+(use-package imenu-list
+  :ensure t
+  :config
+  (setq imenu-list-focus-after-activation t
+        imenu-list-auto-resize t
+        imenu-list-position 'right
+        imenu-list-size 30)
+  
+  ;; Evil bindings для imenu-list
+  (evil-define-key 'normal imenu-list-major-mode-map
+    (kbd "RET") 'imenu-list-goto-entry
+    "o" 'imenu-list-goto-entry
+    "q" 'imenu-list-quit-window
+    "r" 'imenu-list-refresh
+    "f" 'imenu-list-find-entry
+    "mouse-1" 'imenu-list-mouse-goto-entry))
+
+;; Minimap - миникарта кода
+(use-package minimap
+  :ensure t
+  :config
+  (setq minimap-window-location 'right
+        minimap-width-fraction 0.1
+        minimap-minimum-width 10
+        minimap-update-delay 0.2
+        minimap-always-recenter t
+        minimap-recenter-type 'middle
+        minimap-hide-scroll-bar t
+        minimap-hide-fringes t
+        minimap-dedicated-window t)
+  
+  ;; Настройка цветов для minimap
+  (custom-set-faces
+   '(minimap-active-region-background ((t (:background "#555555"))))
+   '(minimap-current-line-face ((t (:background "#333333"))))))
+
+;; Ace Window для быстрого переключения между окнами
+(use-package ace-window
+  :ensure t
+  :config
+  (setq aw-scope 'frame
+        aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l)
+        aw-minibuffer-flag t
+        aw-ignore-current nil
+        aw-leading-char-style 'char
+        aw-dispatch-always t)
+  
+  ;; Настройка внешнего вида
+  (custom-set-faces
+   '(aw-leading-char-face ((t (:inherit ace-jump-face-foreground :height 3.0))))))
+
+;; Winner Mode для отмены изменений в расположении окон
+(use-package winner
+  :ensure t
+  :config
+  (winner-mode 1))
+
+;; Winum для нумерации окон
+(use-package winum
+  :ensure t
+  :config
+  (winum-mode 1)
+  (setq winum-auto-setup-mode-line nil
+        winum-mode-line-position 1
+        winum-ignored-buffers '("*which-key*")))
+
+;; Sidebar Toggle - переключение боковых панелей
+(defun toggle-treemacs-and-imenu ()
+  "Toggle both treemacs and imenu-list."
+  (interactive)
+  (treemacs)
+  (imenu-list-smart-toggle))
+
+(defun toggle-all-sidebars ()
+  "Toggle all sidebar panels."
+  (interactive)
+  (treemacs)
+  (imenu-list-smart-toggle)
+  (minimap-mode 'toggle))
+
+(defun hide-all-sidebars ()
+  "Hide all sidebar panels."
+  (interactive)
+  (when (treemacs-is-treemacs-window-selected?)
+    (treemacs-quit))
+  (when (get-buffer-window imenu-list-buffer-name)
+    (imenu-list-quit-window))
+  (when minimap-mode
+    (minimap-mode -1)))
+
+;; Функция для настройки sidebar layout
+(defun setup-ide-layout ()
+  "Setup IDE-like layout with sidebars."
+  (interactive)
+  (delete-other-windows)
+  (treemacs)
+  (other-window 1)
+  (split-window-right)
+  (other-window 1)
+  (imenu-list)
+  (other-window -1)
+  (minimap-mode 1))
+
+;; Функция для восстановления обычного layout
+(defun restore-normal-layout ()
+  "Restore normal single-window layout."
+  (interactive)
+  (hide-all-sidebars)
+  (delete-other-windows))
+
+;; Evil Leader bindings для sidebar
+(evil-define-key 'normal 'global
+  ;; Treemacs
+  (kbd "<leader>tt") 'treemacs
+  (kbd "<leader>tT") 'treemacs-select-window
+  (kbd "<leader>td") 'treemacs-select-directory
+  (kbd "<leader>tf") 'treemacs-find-file
+  (kbd "<leader>tp") 'treemacs-add-and-display-current-project
+  (kbd "<leader>tb") 'treemacs-bookmark
+  (kbd "<leader>tr") 'treemacs-refresh
+  
+  ;; Imenu List
+  (kbd "<leader>ii") 'imenu-list-smart-toggle
+  (kbd "<leader>if") 'imenu-list-find-entry
+  (kbd "<leader>ir") 'imenu-list-refresh
+  
+  ;; Minimap
+  (kbd "<leader>mm") 'minimap-mode
+  (kbd "<leader>mc") 'minimap-create
+  (kbd "<leader>mk") 'minimap-kill
+  
+  ;; Layout management
+  (kbd "<leader>li") 'setup-ide-layout
+  (kbd "<leader>ln") 'restore-normal-layout
+  (kbd "<leader>ls") 'toggle-all-sidebars
+  (kbd "<leader>lh") 'hide-all-sidebars
+  (kbd "<leader>lt") 'toggle-treemacs-and-imenu
+  
+  ;; Window management
+  (kbd "<leader>ww") 'ace-window
+  (kbd "<leader>wd") 'ace-delete-window
+  (kbd "<leader>wD") 'ace-delete-other-windows
+  (kbd "<leader>ws") 'ace-swap-window
+  (kbd "<leader>wm") 'ace-maximize-window
+  (kbd "<leader>wu") 'winner-undo
+  (kbd "<leader>wU") 'winner-redo
+  
+  ;; Window numbers
+  (kbd "<leader>1") 'winum-select-window-1
+  (kbd "<leader>2") 'winum-select-window-2
+  (kbd "<leader>3") 'winum-select-window-3
+  (kbd "<leader>4") 'winum-select-window-4
+  (kbd "<leader>5") 'winum-select-window-5
+  (kbd "<leader>6") 'winum-select-window-6
+  (kbd "<leader>7") 'winum-select-window-7
+  (kbd "<leader>8") 'winum-select-window-8
+  (kbd "<leader>9") 'winum-select-window-9)
+
+;; Дополнительные глобальные биндинги
+(global-set-key [f8] 'treemacs)
+(global-set-key [f9] 'imenu-list-smart-toggle)
+(global-set-key [f10] 'minimap-mode)
+(global-set-key (kbd "C-x C-w") 'ace-window)
+
+;; Автоматическое открытие treemacs при старте (опционально)
+(defvar auto-open-treemacs nil
+  "Whether to automatically open treemacs on startup.")
+
+(when auto-open-treemacs
+  (add-hook 'emacs-startup-hook 'treemacs))
+
+;; Настройка для автоматического обновления imenu-list
+(add-hook 'after-save-hook
+          (lambda ()
+            (when (get-buffer-window imenu-list-buffer-name)
+              (imenu-list-refresh))))
+
+;; Интеграция с проектами
+(defun treemacs-project-setup ()
+  "Setup treemacs with current project."
+  (interactive)
+  (when (projectile-project-p)
+    (treemacs-add-and-display-current-project)))
+
+;; Хук для автоматического добавления проектов в treemacs
+(add-hook 'projectile-after-switch-project-hook 'treemacs-project-setup)
+
+;; Настройка для работы с Git
+(defun treemacs-git-setup ()
+  "Setup treemacs git integration."
+  (when (and (treemacs-workspace->is-empty?)
+             (projectile-project-p))
+    (treemacs-add-and-display-current-project)))
+
+(add-hook 'magit-status-mode-hook 'treemacs-git-setup)
+
+;; Кастомные цвета для sidebar
+(custom-set-faces
+ '(treemacs-root-face ((t (:inherit font-lock-string-face :weight bold :height 1.2))))
+ '(treemacs-directory-face ((t (:inherit font-lock-function-name-face))))
+ '(treemacs-file-face ((t (:inherit default))))
+ '(treemacs-git-modified-face ((t (:inherit font-lock-variable-name-face))))
+ '(treemacs-git-added-face ((t (:inherit font-lock-type-face))))
+ '(treemacs-git-untracked-face ((t (:inherit font-lock-comment-face)))))
+
+(provide 'ide-sidebar-config)
+;;; ide-sidebar-config.el ends here
+#+end_src
+*** Автодополнение
+#+begin_src emacs-lisp
+;; Company для автодополнения
+(use-package company
+  :config
+  (global-company-mode 1)
+  (setq company-idle-delay 0.2)
+  (setq company-minimum-prefix-length 1)
+  
+  ;; Evil bindings для company
+  (define-key company-active-map (kbd "C-j") 'company-select-next)
+  (define-key company-active-map (kbd "C-k") 'company-select-previous)
+  (define-key company-active-map (kbd "C-l") 'company-complete-selection))
+
+;; Flycheck для проверки синтаксиса
+(use-package flycheck
+  :config
+  (global-flycheck-mode 1))
+
+;; Flycheck-clj-kondo для линтинга Clojure
+(use-package flycheck-clj-kondo
+  :after flycheck
+  :config
+  (require 'flycheck-clj-kondo))
+
+
+;; Which-key для показа доступных команд
+(use-package which-key
+  :config
+  (which-key-mode 1)
+  (setq which-key-popup-type 'side-window)
+  (setq which-key-side-window-location 'bottom))
+
+;; LSP + форматирование
+(use-package lsp-mode
+  :hook
+  ((clojure-mode . lsp)
+   (clojurescript-mode . lsp)
+   (clojurec-mode . lsp)
+   (python-ts-mode . lsp)
+   (vue-mode . lsp)
+   (yaml-mode . lsp))
+  :config
+  ;; Для Vue 3 + TypeScript
+  (add-to-list 'lsp-language-id-configuration '(vue-mode . "vue"))
+  (lsp-register-client
+   (make-lsp-client :new-connection (lsp-tramp-connection "vscode-vue-language-server")
+		    :priority -1
+		    :server-id 'vue-ls)))
+
+(use-package treesit
+  :ensure nil
+  :config
+  (setq treesit-language-source-alist
+   '((bash "https://github.com/tree-sitter/tree-sitter-bash")
+     (clojure "https://github.com/sogaiu/tree-sitter-clojure")
+     (clojurescript "https://github.com/sogaiu/tree-sitter-clojure")
+     (javascript . ("https://github.com/tree-sitter/tree-sitter-javascript"))
+     (typescript . ("https://github.com/tree-sitter/tree-sitter-typescript"))
+     (vue . ("https://github.com/ikatyang/tree-sitter-vue"))
+     (yaml . ("https://github.com/ikatyang/tree-sitter-yaml"))
+     (python "https://github.com/tree-sitter/tree-sitter-python")))
+  (add-hook 'typescript-mode-hook #'treesit-install-language-grammar))
+
+#+end_src
+
+*** Git
+#+begin_src emacs-lisp
+(use-package magit
+  :ensure t
+  :defer t
+  :commands (magit-status))
+#+end_src
+
+*** Common Lisp
+#+begin_src emacs-lisp
+(use-package sly
+  :config
+  (setq inferior-lisp-program "sbcl") ;; Укажите путь к вашему интерпретатору (например, SBCL)
+  (add-hook 'sly-mode-hook #'rainbow-delimiters-mode) ;; Подсветка скобок
+  (add-hook 'sly-mrepl-mode-hook #'paredit-mode)
+  (with-eval-after-load 'evil
+    (evil-define-key 'normal sly-mrepl-mode-map
+      (kbd "C-j") 'sly-mrepl-next-input
+      (kbd "C-k") 'sly-mrepl-previous-input)
+    (evil-define-key 'normal sly-mode-map
+      "<leader>e" 'sly-eval-last-expression
+      "<leader>E" 'sly-eval-defun
+      "<leader>d" 'sly-describe-symbol
+      "<leader>D" 'sly-documentation
+      "<leader>c" 'sly-compile-defun
+      "<leader>C" 'sly-compile-and-load-file
+      "<leader>r" 'sly-eval-region
+      "<leader>m" 'sly-macroexpand-1
+      "<leader>M" 'sly-macroexpand-all
+      "<leader>l" 'sly-load-file
+      "<leader>b" 'sly-eval-buffer
+      "<leader>f" 'sly-edit-definition
+      "<leader>g" 'sly-edit-uses
+      "<leader>i" 'sly-inspect
+      "<leader>n" 'sly-next-note
+      "<leader>p" 'sly-previous-note
+      "<leader>o" 'sly-remove-notes
+      "<leader>t" 'sly-list-connections
+      "<leader>x" 'sly-disconnect
+      "<leader>X" 'sly-restart-inferior-lisp
+      (kbd "K") 'sly-documentation-lookup)
+    (evil-define-key 'normal 'global-map
+      (kbd "<leader>ss") 'sly
+      (kbd "<leader>sc") 'sly-connect
+      (kbd "<leader>sw") 'sly-selector)
+    ;; Обеспечение нормальной работы Evil в REPL
+    (evil-set-initial-state 'sly-repl-mode 'insert)
+    (evil-set-initial-state 'sly-inspector-mode 'normal)
+    (evil-set-initial-state 'sly-db-mode 'normal)
+    (evil-set-initial-state 'sly-xref-mode 'normal)
+    (evil-set-initial-state 'sly-stickers--replay-mode 'normal)))
+#+end_src
+*** Clojure
+#+begin_src emacs-lisp
+;; Базовая поддержка Clojure
+(use-package clojure-mode
+  :ensure t
+  :hook ((clojure-mode . paredit-mode)
+         (clojure-mode . subword-mode)
+         (clojure-mode . cider-mode))
+  :config
+  ;; Простые горячие клавиши для навигации
+  (evil-define-key 'normal clojure-mode-map
+    (kbd "gd") 'cider-find-var           ; go to definition
+    (kbd "K")  'cider-doc                ; документация
+    (kbd "gr") 'cider-find-references))  ; найти использования
+
+;; CIDER - основной инструмент для Clojure REPL
+(use-package cider
+  :ensure t
+  :config
+  ;; Базовые настройки
+  (setq cider-repl-display-help-banner nil
+        cider-repl-pop-to-buffer-on-connect 'display-only
+        cider-prompt-save-file-on-load 'always-save
+        cider-repl-use-pretty-printing t
+        cider-repl-result-prefix ";; => "
+        cider-auto-select-error-buffer t
+        cider-show-error-buffer t)
+  
+  ;; Shadow-cljs настройки
+  (setq cider-default-cljs-repl 'shadow
+        cider-shadow-default-options ":app"
+        cider-shadow-watched-builds '(":app"))
+  
+  ;; МНОГОСТРОЧНЫЙ ВВОД В REPL
+  (setq cider-repl-wrap-history t)
+  (add-hook 'cider-repl-mode-hook
+            (lambda ()
+              ;; Включить многострочный режим по умолчанию
+              (setq-local electric-indent-mode nil)))
+  
+  ;; Простые и интуитивные горячие клавиши
+  (evil-define-key 'normal cider-mode-map
+    ;; REPL управление (<leader> m = major mode)
+    (kbd "<leader> mj") 'cider-jack-in              ; jack-in
+    (kbd "<leader> mJ") 'cider-jack-in-cljs         ; jack-in cljs
+    (kbd "<leader> ms") 'cider-switch-to-repl-buffer ; switch to repl
+    (kbd "<leader> mq") 'cider-quit                 ; quit
+    
+    ;; Оценка кода (<leader> e = evaluate)
+    (kbd "<leader> ee") 'cider-eval-last-sexp       ; eval expression
+    (kbd "<leader> ef") 'cider-eval-defun-at-point  ; eval function
+    (kbd "<leader> eb") 'cider-eval-buffer          ; eval buffer
+    (kbd "<leader> er") 'cider-eval-region          ; eval region
+    
+    ;; Тестирование (<leader> t = test)
+    (kbd "<leader> tt") 'cider-test-run-test        ; test current
+    (kbd "<leader> tn") 'cider-test-run-ns-tests    ; test namespace
+    (kbd "<leader> tp") 'cider-test-run-project-tests ; test project
+    
+    ;; Отладка (<leader> d = debug)
+    (kbd "<leader> db") 'cider-debug-defun-at-point ; debug function
+    (kbd "<leader> di") 'cider-inspect-last-result) ; inspect result
+  
+  ;; Горячие клавиши для REPL
+  (evil-define-key 'normal cider-repl-mode-map
+    (kbd "<leader> ms") 'cider-switch-to-last-clojure-buffer
+    (kbd "<leader> mc") 'cider-repl-clear-buffer
+    (kbd "C-c C-o") 'cider-repl-clear-output)
+  
+  ;; Многострочный ввод в REPL (Insert mode)
+  (evil-define-key 'insert cider-repl-mode-map
+    (kbd "C-j") 'cider-repl-newline-and-indent  ; новая строка без отправки
+    (kbd "RET") 'cider-repl-return              ; умная отправка
+    (kbd "C-c C-j") 'cider-repl-newline-and-indent)) ; принудительная новая строка
+
+;; LSP для статического анализа (опционально)
+(use-package lsp-mode
+  :ensure t
+  :hook ((clojure-mode . lsp-deferred)
+         (clojurescript-mode . lsp-deferred))
+  :config
+  ;; Отключить некоторые навязчивые функции LSP
+  (setq lsp-enable-symbol-highlighting nil
+        lsp-lens-enable nil
+        lsp-headerline-breadcrumb-enable nil
+        lsp-modeline-code-actions-enable nil)
+  
+  ;; Настройка clojure-lsp
+  (setq lsp-clojure-server-command '("clojure-lsp")))
+
+;; Автодополнение
+(use-package company
+  :ensure t
+  :hook (cider-repl-mode . company-mode)
+  :config
+  (setq company-idle-delay 0.3
+        company-minimum-prefix-length 1))
+
+;; ============================================================================
+;; УТИЛИТЫ ДЛЯ РАБОТЫ С ПРОЕКТАМИ
+;; ============================================================================
+
+(defun my/create-clojure-project (project-name)
+  "Создать новый Clojure проект с deps.edn"
+  (interactive "sИмя проекта: ")
+  (let* ((project-dir (expand-file-name project-name))
+         (src-dir (concat project-dir "/src/" project-name))
+         (test-dir (concat project-dir "/test/" project-name)))
+    
+    ;; Создать директории
+    (make-directory src-dir t)
+    (make-directory test-dir t)
+    
+    ;; Создать deps.edn
+    (with-temp-file (concat project-dir "/deps.edn")
+      (insert (format "{:paths [\"src\" \"resources\"]
+ :deps {org.clojure/clojure {:mvn/version \"1.12.1\"}}
+ :aliases
+ {:dev {:extra-paths [\"dev\"]
+        :extra-deps {org.clojure/tools.namespace {:mvn/version \"1.4.4\"}}}
+  :test {:extra-paths [\"test\"]
+         :extra-deps {org.clojure/test.check {:mvn/version \"1.1.1\"}}}
+  :repl {:main-opts [\"-m\" \"nrepl.cmdline\" \"--middleware\"
+                     \"[cider.nrepl/cider-middleware]\"]}}}
+")))
+    
+    ;; Создать основной файл
+    (with-temp-file (concat src-dir "/core.clj")
+      (insert (format "(ns %s.core)
+
+(defn hello
+  \"Приветствие\"
+  [name]
+  (str \"Hello, \" name \"!\"))
+
+(defn -main
+  [& args]
+  (println (hello \"World\")))
+" project-name)))
+    
+    ;; Создать тестовый файл
+    (with-temp-file (concat test-dir "/core_test.clj")
+      (insert (format "(ns %s.core-test
+  (:require [clojure.test :refer :all]
+            [%s.core :refer :all]))
+
+(deftest hello-test
+  (testing \"Функция hello\"
+    (is (= \"Hello, Test!\" (hello \"Test\")))))
+" project-name project-name)))
+    
+    ;; Создать .lsp/config.edn для правильной работы LSP
+    (let ((lsp-dir (concat project-dir "/.lsp")))
+      (make-directory lsp-dir t)
+      (with-temp-file (concat lsp-dir "/config.edn")
+        (insert "{:source-paths #{\"src\" \"test\"}\n :dependency-scheme \"jar\"}\n")))
+    
+    ;; Открыть проект
+    (find-file (concat project-dir "/deps.edn"))
+    (message "Проект %s создан в %s" project-name project-dir)))
+
+(defun my/cider-repl-multiline-mode ()
+  "Переключить многострочный режим в CIDER REPL"
+  (interactive)
+  (if (bound-and-true-p electric-indent-mode)
+      (progn
+        (electric-indent-mode -1)
+        (message "Многострочный режим ВКЛЮЧЕН (C-j для новой строки)"))
+    (progn
+      (electric-indent-mode 1)
+      (message "Многострочный режим ВЫКЛЮЧЕН"))))
+
+(defun my/cider-jack-in-auto ()
+  "Автоматически выбрать тип проекта для jack-in"
+  (interactive)
+  (cond 
+   ((file-exists-p "shadow-cljs.edn") 
+    (cider-jack-in-cljs '(:cljs-repl-type shadow)))
+   ((file-exists-p "deps.edn") 
+    (cider-jack-in-clj '(:project-type clojure-cli)))
+   ((file-exists-p "project.clj") 
+    (cider-jack-in-clj '(:project-type lein)))
+   (t (cider-jack-in-clj))))
+
+;; Глобальные горячие клавиши
+(evil-define-key 'normal 'global
+  ;; Создание проекта
+  (kbd "<leader> pn") 'my/create-clojure-project
+  ;; Автоматический jack-in
+  (kbd "<leader> mJ") 'my/cider-jack-in-auto
+  ;; Переключение многострочного режима в REPL
+  (kbd "<leader> mM") 'my/cider-repl-multiline-mode)
+
+;; ============================================================================
+;; ДОПОЛНИТЕЛЬНЫЕ НАСТРОЙКИ
+;; ============================================================================
+
+;; Красивые символы для Clojure
+(add-hook 'clojure-mode-hook
+          (lambda ()
+            (push '(">=" . ?≥) prettify-symbols-alist)
+            (push '("<=" . ?≤) prettify-symbols-alist)
+            (push '("!=" . ?≠) prettify-symbols-alist)
+            (push '("lambda" . ?λ) prettify-symbols-alist)
+            (prettify-symbols-mode)))
+
+;; Автосохранение при переключении в REPL
+(add-hook 'cider-switch-to-repl-buffer-hook
+          (lambda () (save-some-buffers t)))
+
+;; Отключить надоедливые предупреждения
+(setq cider-repl-buffer-size-limit nil)
+(setq nrepl-log-messages nil)
+#+end_src
+
+*** Python
+#+begin_src emacs-lisp
+#+end_src
+
+*** Ansible
+#+begin_src emacs-lisp
+(use-package yaml-mode
+  :mode ("\\.yml\\'" "\\.yaml\\'"))
+
+(use-package ansible
+  :hook (yaml-mode . (lambda ()
+                       (when (ansible::detect-ansible)
+                         (ansible 1)
+                         (ansible-doc-mode 1)))))
+  
+(use-package ansible-vault
+  :config
+  (setq ansible-vault-password-file "~/.vault_pass.txt"))
+#+end_src
+*** JavaScript
+#+begin_src emacs-lisp
+;;; vue-dev-config.el --- Vue.js development configuration with Evil Mode
+
+;;; Commentary:
+;; Configuration for Vue.js development with SCSS, Tailwind CSS, HTML, CSS and Emmet
+;; Designed to work with Evil Mode
+
+;;; Code:
+
+;; Web Mode для HTML/Vue файлов
+(use-package web-mode
+  :ensure t
+  :mode (("\\.html\\'" . web-mode)
+         ("\\.vue\\'" . web-mode)
+         ("\\.jsx\\'" . web-mode)
+         ("\\.tsx\\'" . web-mode))
+  :config
+  (setq web-mode-markup-indent-offset 2)
+  (setq web-mode-css-indent-offset 2)
+  (setq web-mode-code-indent-offset 2)
+  (setq web-mode-script-padding 2)
+  (setq web-mode-style-padding 2)
+  (setq web-mode-block-padding 2)
+  (setq web-mode-comment-style 2)
+  (setq web-mode-enable-current-element-highlight t)
+  (setq web-mode-enable-current-column-highlight t)
+  (setq web-mode-enable-auto-closing t)
+  (setq web-mode-enable-auto-pairing t)
+  (setq web-mode-enable-auto-expanding t)
+  (setq web-mode-enable-css-colorization t)
+  
+  ;; Vue.js specific settings
+  (setq web-mode-engines-alist
+        '(("vue" . "\\.vue\\'")))
+  
+  ;; Evil mode bindings for web-mode
+  (evil-define-key 'normal web-mode-map
+    "za" 'web-mode-element-fold-or-unfold
+    "zc" 'web-mode-fold-or-unfold
+    "zo" 'web-mode-fold-or-unfold
+    "gd" 'web-mode-tag-match
+    "%" 'web-mode-navigate))
+
+;; Vue Mode для лучшей поддержки Vue.js
+(use-package vue-mode
+  :ensure t
+  :mode "\\.vue\\'"
+  :config
+  (setq vue-mode-template-indent-offset 2)
+  (setq vue-mode-script-indent-offset 2)
+  (setq vue-mode-style-indent-offset 2))
+
+;; SCSS Mode
+(use-package scss-mode
+  :ensure t
+  :mode "\\.scss\\'"
+  :config
+  (setq scss-compile-at-save nil)
+  (setq css-indent-offset 2))
+
+;; CSS Mode improvements
+(use-package css-mode
+  :config
+  (setq css-indent-offset 2)
+  
+  ;; Evil bindings for CSS
+  (evil-define-key 'normal css-mode-map
+    "K" 'css-lookup-symbol))
+
+;; Emmet Mode для быстрого написания HTML/CSS
+(use-package emmet-mode
+  :ensure t
+  :hook ((web-mode . emmet-mode)
+         (vue-mode . emmet-mode)
+         (css-mode . emmet-mode)
+         (scss-mode . emmet-mode)
+         (html-mode . emmet-mode))
+  :config
+  (setq emmet-move-cursor-between-quotes t)
+  (setq emmet-expand-jsx-className? t)
+  
+  ;; Evil mode bindings для Emmet
+  (evil-define-key 'insert emmet-mode-keymap
+    (kbd "C-j") 'emmet-expand-line
+    (kbd "C-l") 'emmet-next-edit-point
+    (kbd "C-h") 'emmet-prev-edit-point)
+  
+  (evil-define-key 'normal emmet-mode-keymap
+    (kbd "<leader>e") 'emmet-expand-line
+    (kbd "<leader>n") 'emmet-next-edit-point
+    (kbd "<leader>p") 'emmet-prev-edit-point
+    (kbd "<leader>w") 'emmet-wrap-with-markup))
+
+;; Company Mode для автодополнения
+(use-package company
+  :ensure t
+  :hook ((web-mode . company-mode)
+         (css-mode . company-mode)
+         (scss-mode . company-mode))
+  :config
+  (setq company-idle-delay 0.2)
+  (setq company-minimum-prefix-length 1)
+  
+  ;; Evil bindings for company
+  (evil-define-key 'insert company-active-map
+    (kbd "C-n") 'company-select-next
+    (kbd "C-p") 'company-select-previous
+    (kbd "C-d") 'company-show-doc-buffer
+    (kbd "C-v") 'company-show-location))
+
+;; Company Web для HTML/CSS автодополнения
+(use-package company-web
+  :ensure t
+  :after company
+  :config
+  (add-to-list 'company-backends 'company-web-html)
+  (add-to-list 'company-backends 'company-css))
+
+;; Flycheck для проверки синтаксиса
+(use-package flycheck
+  :ensure t
+  :hook ((web-mode . flycheck-mode)
+         (css-mode . flycheck-mode)
+         (scss-mode . flycheck-mode))
+  :config
+  (setq flycheck-check-syntax-automatically '(save mode-enabled))
+  
+  ;; Evil bindings for flycheck
+  (evil-define-key 'normal flycheck-mode-map
+    "]e" 'flycheck-next-error
+    "[e" 'flycheck-previous-error
+    (kbd "<leader>fe") 'flycheck-list-errors
+    (kbd "<leader>fc") 'flycheck-clear))
+
+;; Rainbow Mode для отображения цветов в CSS
+(use-package rainbow-mode
+  :ensure t
+  :hook ((css-mode . rainbow-mode)
+         (scss-mode . rainbow-mode)
+         (web-mode . rainbow-mode)))
+
+;; Prettier для форматирования кода
+(use-package prettier-js
+  :ensure t
+  :hook ((web-mode . prettier-js-mode)
+         (css-mode . prettier-js-mode)
+         (scss-mode . prettier-js-mode))
+  :config
+  (setq prettier-js-args '("--single-quote" "--trailing-comma" "es5"))
+  (setq prettier-js-show-errors nil))
+
+;; Format All - универсальное форматирование
+(use-package format-all
+  :ensure t
+  :hook ((web-mode . format-all-mode)
+         (vue-mode . format-all-mode)
+         (css-mode . format-all-mode)
+         (scss-mode . format-all-mode)
+         (html-mode . format-all-mode))
+  :config
+  (setq format-all-show-errors 'never)
+  
+  ;; Evil binding для ручного форматирования
+  (evil-define-key 'normal format-all-mode-map
+    (kbd "<leader>ff") 'format-all-buffer
+    (kbd "<leader>fr") 'format-all-region))
+
+;; Автоформатирование при сохранении
+(defun auto-format-on-save ()
+  "Auto format buffer on save."
+  (when (and (bound-and-true-p format-all-mode)
+             (not (eq major-mode 'fundamental-mode)))
+    (format-all-buffer)))
+
+;; Добавляем хук для автоформатирования
+(add-hook 'before-save-hook 'auto-format-on-save)
+
+;; Альтернативное решение через LSP форматирование
+(defun lsp-format-on-save ()
+  "Format buffer using LSP if available."
+  (when (and (bound-and-true-p lsp-mode)
+             (lsp-feature? "textDocument/formatting"))
+    (lsp-format-buffer)))
+
+;; Настройка для конкретных режимов
+(defun setup-web-format-on-save ()
+  "Setup formatting on save for web development modes."
+  (add-hook 'before-save-hook
+            (lambda ()
+              (when (and auto-format-enabled
+                         (derived-mode-p 'web-mode 'vue-mode 'css-mode 'scss-mode))
+                (cond
+                 ;; Приоритет LSP форматированию если доступно
+                 ((and (bound-and-true-p lsp-mode)
+                       (lsp-feature? "textDocument/formatting"))
+                  (lsp-format-buffer))
+                 ;; Иначе используем format-all
+                 ((bound-and-true-p format-all-mode)
+                  (format-all-buffer))
+                 ;; Fallback на prettier для JS/Vue
+                 ((and (bound-and-true-p prettier-js-mode)
+                       (or (derived-mode-p 'web-mode)
+                           (derived-mode-p 'vue-mode)))
+                  (prettier-js)))))
+            nil t))
+
+;; Применяем настройки к соответствующим режимам
+(add-hook 'web-mode-hook 'setup-web-format-on-save)
+(add-hook 'vue-mode-hook 'setup-web-format-on-save)
+(add-hook 'css-mode-hook 'setup-web-format-on-save)
+(add-hook 'scss-mode-hook 'setup-web-format-on-save)
+
+;; Tailwind CSS поддержка
+(use-package lsp-tailwindcss
+  :ensure t
+  :after lsp-mode
+  :init
+  (setq lsp-tailwindcss-add-on-mode t))
+
+;; LSP Mode для расширенной поддержки языков
+(use-package lsp-mode
+  :ensure t
+  :hook ((web-mode . lsp-deferred)
+         (vue-mode . lsp-deferred)
+         (css-mode . lsp-deferred)
+         (scss-mode . lsp-deferred))
+  :commands lsp-deferred
+  :config
+  (setq lsp-prefer-flymake nil)
+  (setq lsp-enable-snippet t)
+  (setq lsp-enable-completion-at-point t)
+  ;; Автоформатирование через LSP
+  (setq lsp-enable-on-type-formatting t)
+  (setq lsp-before-save-edits nil)
+  
+  ;; Evil bindings for LSP
+  (evil-define-key 'normal lsp-mode-map
+    "gd" 'lsp-find-definition
+    "gr" 'lsp-find-references
+    "gi" 'lsp-find-implementation
+    "K" 'lsp-hover
+    (kbd "<leader>rn") 'lsp-rename
+    (kbd "<leader>ca") 'lsp-execute-code-action
+    (kbd "<leader>cf") 'lsp-format-buffer
+    (kbd "<leader>cF") 'lsp-format-region))
+
+;; LSP UI для улучшенного интерфейса
+(use-package lsp-ui
+  :ensure t
+  :after lsp-mode
+  :config
+  (setq lsp-ui-doc-enable t)
+  (setq lsp-ui-doc-position 'bottom)
+  (setq lsp-ui-sideline-enable t)
+  (setq lsp-ui-flycheck-enable t)
+  
+  ;; Evil bindings for LSP UI
+  (evil-define-key 'normal lsp-ui-mode-map
+    (kbd "<leader>ld") 'lsp-ui-doc-show
+    (kbd "<leader>lf") 'lsp-ui-flycheck-list
+    (kbd "<leader>ls") 'lsp-ui-sideline-toggle-symbols-info))
+
+;; Which Key для показа доступных команд
+(use-package which-key
+  :ensure t
+  :config
+  (which-key-mode 1)
+  (setq which-key-idle-delay 0.5))
+
+;; Настройки отступов и табуляции
+(setq-default indent-tabs-mode nil)
+(setq-default tab-width 2)
+(setq js-indent-level 2)
+(setq css-indent-offset 2)
+
+;; Дополнительные Evil bindings для веб-разработки
+(evil-define-key 'normal 'global
+  (kbd "<leader>ww") 'browse-url-at-point
+  (kbd "<leader>wf") 'browse-url-of-file
+  (kbd "<leader>wr") 'web-mode-reload
+  (kbd "<leader>af") 'format-all-buffer
+  (kbd "<leader>ar") 'format-all-region)
+
+;; Переключение автоформатирования
+(defvar auto-format-enabled t
+  "Whether auto-formatting on save is enabled.")
+
+(defun toggle-auto-format ()
+  "Toggle auto-formatting on save."
+  (interactive)
+  (setq auto-format-enabled (not auto-format-enabled))
+  (message "Auto-formatting %s" (if auto-format-enabled "enabled" "disabled")))
+
+(evil-define-key 'normal 'global
+  (kbd "<leader>tf") 'toggle-auto-format)
+
+;; Настройка для работы с Tailwind классами
+(defun tailwind-sort-classes ()
+  "Sort Tailwind CSS classes in current line or region."
+  (interactive)
+  (let ((start (if (use-region-p) (region-beginning) (line-beginning-position)))
+        (end (if (use-region-p) (region-end) (line-end-position))))
+    (save-restriction
+      (narrow-to-region start end)
+      (goto-char (point-min))
+      (while (re-search-forward "class=\"\\([^\"]*\\)\"" nil t)
+        (let ((classes (split-string (match-string 1))))
+          (replace-match (concat "class=\"" (string-join (sort classes 'string<) " ") "\"")))))))
+
+(evil-define-key 'normal 'global
+  (kbd "<leader>tc") 'tailwind-sort-classes)
+
+;; Snippets для быстрого создания Vue компонентов
+(use-package yasnippet
+  :ensure t
+  :hook ((web-mode . yas-minor-mode)
+         (vue-mode . yas-minor-mode))
+  :config
+  (yas-global-mode 1))
+
+(use-package yasnippet-snippets
+  :ensure t
+  :after yasnippet)
+
+;; Настройка для Vue.js файлов
+(add-to-list 'auto-mode-alist '("\\.vue\\'" . vue-mode))
+
+;; Хуки для настройки окружения
+(add-hook 'web-mode-hook
+          (lambda ()
+            (when (string-equal "vue" (file-name-extension buffer-file-name))
+              (vue-mode))))
+
+(provide 'vue-dev-config)
+;;; vue-dev-config.el ends here
+#+end_src
+** Org
+*** Интеграция с Evil
+#+begin_src emacs-lisp
+(use-package evil-org
+  :ensure t
+  :after org
+  :hook (org-mode . (lambda () (evil-org-mode)))
+  :config
+  (require 'evil-org-agenda)
+  (evil-org-agenda-set-keys)
+  (evil-org-set-key-theme
+   '(todo calendar)))
+#+end_src
+*** Org Roam
+#+begin_src emacs-lisp
+(use-package org-roam
+  :ensure t
+  :init
+  (setq org-roam-v2-ack t)
+  :custom
+  (org-roam-directory "~/docs/org")
+  (org-roam-completion-everywhere t)
+  (org-roam-dailies-capture-templates
+    '(("d" "default" entry "* %<%H:%M %p>: %?"
+       :if-new (file+head "%<%Y-%m-%d>.org" "#+title: %<%Y-%m-%d>\n"))))
+  :config
+  (require 'org-roam-dailies) ;; Ensure the keymap is available
+  (org-roam-db-autosync-mode)
+  ;; Evil mode keybindings
+  (with-eval-after-load 'evil
+    ;; Global evil keybindings
+    (evil-define-key 'normal 'global-map
+      (kbd "<leader>nf") 'org-roam-node-find
+      (kbd "<leader>nl") 'org-roam-buffer-toggle
+      (kbd "<leader>ni") 'org-roam-node-insert
+      (kbd "<leader>ndy") 'org-roam-dailies-capture-yesterday
+      (kbd "<leader>ndt") 'org-roam-dailies-capture-tomorrow
+      (kbd "<leader>ndd") 'org-roam-dailies-capture-today
+      (kbd "<leader>ndv") 'org-roam-dailies-goto-today
+      (kbd "<leader>ndn") 'org-roam-dailies-goto-next-note
+      (kbd "<leader>ndp") 'org-roam-dailies-goto-previous-note)
+    
+    ;; Org-mode specific keybindings
+    (evil-define-key 'normal org-mode-map
+      (kbd "<leader>ni") 'org-roam-node-insert
+      (kbd "C-M-i") 'completion-at-point)))
+#+end_src
+
+*** Org Agenda
+#+begin_src emacs-lisp
+(setq org-agenda-files '("~/docs/org"))
+#+end_src
+
+*** Org Babel
+#+begin_src emacs-lisp
+(require 'cider)
+(require 'ob-clojure)
+
+(defun my/org-insert-lisp-src-block ()
+  "Вставить шаблон Lisp src-блока с :session sly и перейти внутрь."
+  (interactive)
+  (let ((template "#+BEGIN_SRC lisp :session org-src :results value\n\n#+END_SRC"))
+    ;; Вставляем шаблон
+    (insert template)
+    ;; Переносим курсор внутрь блока, на пустую строку
+    (forward-line -1)
+    ;; Делаем Org-Mode aware редактирование кода
+    (org-edit-src-code)))
+
+(defun my/org-insert-clojure-src-block ()
+  "Clojure template."
+  (interactive)
+  (let ((template "#+BEGIN_SRC clojure :results value\n\n#+END_SRC"))
+    ;; Вставляем шаблон
+    (insert template)
+    ;; Переносим курсор внутрь блока, на пустую строку
+    (forward-line -1)
+    ;; Делаем Org-Mode aware редактирование кода
+    (org-edit-src-code)))
+
+;; Подключаем поддержку Common Lisp в Org-Babel
+(with-eval-after-load 'org
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((lisp . t) (python . t) (shell . t) (clojure . t))) ;; t — значит включена поддержка Lisp
+  ;; Не спрашивать подтверждение при выполнении кода
+  (setq org-confirm-babel-evaluate nil)
+  ;; Убедитесь, что Evil и Org уже загружены
+  (evil-define-key 'normal org-mode-map
+    ;; Org-Babel
+    (kbd "<leader>be") 'org-babel-execute-buffer ;; выполнить все блоки в буфере
+    (kbd "<leader>bt") 'org-babel-tangle	 ;; спутать (tangle)
+    (kbd "<leader>bc") 'org-babel-execute-src-block ;; выполнить текущий блок
+    (kbd "<leader>bj") 'org-babel-next-src-block ;; перейти к следующему блоку
+    (kbd "<leader>bp") 'org-babel-previous-src-block ;; к предыдущему
+    (kbd "<leader> b i l") 'my/org-insert-lisp-src-block
+    (kbd "<leader> b i c") 'my/org-insert-clojure-src-block
+    ;; Экспорт
+    (kbd "<leader>eh") 'org-html-export-to-html	  ;; экспорт в HTML
+    (kbd "<leader>ep") 'org-latex-export-to-pdf))     ;; экспорт в PDF
+
+;; Опция: не перечитывать весь файл, если меняется только код
+(setq org-src-preserve-indentation t)
+
+(setq org-babel-lisp-eval-fn #'sly-eval)
+(setq org-babel-clojure-backend 'cider)
+#+end_src
+
+** Документы
+*** PDF
+#+begin_src emacs-lisp
+(use-package doc-view
+  :config
+  ;; Улучшенное качество рендеринга
+  (setq doc-view-resolution 300)
+  ;; Кэширование для быстрой загрузки
+  (setq doc-view-cache-directory
+        (expand-file-name "docview" user-emacs-directory))
+  ;; Evil биндинги
+  (evil-define-key 'normal doc-view-mode-map
+    ;; Vim-like навигация
+    "j" 'doc-view-next-page
+    "k" 'doc-view-previous-page
+    "h" 'image-backward-hscroll
+    "l" 'image-forward-hscroll
+    ;; Быстрые переходы
+    "gg" 'doc-view-first-page
+    "G" 'doc-view-last-page
+    (kbd "C-d") 'doc-view-scroll-up-or-next-page
+    (kbd "C-u") 'doc-view-scroll-down-or-previous-page
+    ;; Масштабирование
+    "=" 'doc-view-enlarge
+    "-" 'doc-view-shrink
+    "0" 'doc-view-scale-reset
+    "zf" 'doc-view-fit-page-to-window
+    "zw" 'doc-view-fit-width-to-window
+    ;; Поиск и переходы
+    "/" 'doc-view-search
+    "n" 'doc-view-search-next-match
+    "N" 'doc-view-search-previous-match
+    "gt" 'doc-view-goto-page
+    ;; Обновление
+    "gr" 'doc-view-revert-buffer
+    ;; Выход
+    "q" 'quit-window))
+#+end_src
+
+** ИИ
+#+begin_src emacs-lisp
+(use-package gptel)
+
+; Провайдеры
+(setq
+ gptel-model 'deepseek/deepseek-v3-0324
+ gptel-backend
+ (gptel-make-openai "NovitaAI"
+   :host "api.novita.ai"
+   :endpoint "/v3/openai/chat/completions"
+   :key (getenv "NOVITA_API_KEY")
+   :stream t
+   :models '(;; has many more, check https://novita.ai/llm-api
+             deepseek/deepseek-v3-0324
+             deepseek/deepseek-r1-0528
+             mistralai/Mixtral-8x7B-Instruct-v0.1
+             meta-llama/llama-3-70b-instruct
+             meta-llama/llama-3.1-70b-instruct)))
+#+end_src
+
+** Секреты
+#+begin_src emacs-lisp
+(load-file (expand-file-name "~/.emacs.d/secrets.el"))
+#+end_src
