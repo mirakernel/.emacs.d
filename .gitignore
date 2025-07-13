@@ -1,0 +1,5 @@
+*
+!.gitignore
+!config.org
+!README.org
+!secrets-example.el

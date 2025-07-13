@@ -1,7 +1,7 @@
 #+TITLE: Emacs config
 #+AUTHOR: Mirakernel
 #+STARTUP: overview 
- 
+
 * Конфигурация
 :PROPERTIES:
 :header-args: emacs-lisp :tangle "init.el" :mkdirp yes
@@ -31,8 +31,8 @@
 *** Максимизация фрейма
 #+begin_src emacs-lisp
 ; Fullscreen для нового окна
-(setq ns-use-native-fullscreen :true)
-(add-to-list 'default-frame-alist '(fullscreen . fullscreen))
+;; (setq ns-use-native-fullscreen :true)
+;; (add-to-list 'default-frame-alist '(fullscreen . fullscreen))
 #+end_src
 
 *** Прозрачность
@@ -75,8 +75,10 @@
 
 #+begin_src emacs-lisp
 (use-package autothemer)
-(require 'autothemer)
+#+end_src
 
+#+begin_src emacs-lisp :tangle "breeze-theme.el"
+(require 'autothemer)
 (autothemer-deftheme 
  breeze "Dark Breeze KDE theme with purple background and accent color #00d3b8"
  
@@ -452,30 +454,36 @@
 Рабочий ноутбук thunder
 Fedora с KDE Plasma,
 с акцентным цветом циан для kde и терминалом цвета фуксия
-использую my-breeze
+использую breeze
 
 Личный ноутбук tsunami
 Gentoo с Nord Theme
 использую nord
 
+UPD: перевел личный ноут на aurora от universal blue,
+там kde, выбрал оранжевый акцентный цвет,
+но думаю и с cyan цветом breeze норм будет
+
 #+begin_src emacs-lisp
-(let ((hostname (string-trim (shell-command-to-string "hostname"))))
-  (pcase hostname
-    ("tsunami"
-     (if (daemonp)
-         ;; Для демона: загружать тему при создании каждого фрейма
-         (add-hook 'after-make-frame-functions
-                   (lambda (frame)
-                     (with-selected-frame frame
-                       (load-theme 'nord t))))
-       ;; В обычном режиме загружаем тему сразу
-       (load-theme 'nord t)))
-    
-    ("thunder"
-     (load-theme 'breeze t))
-    
-    (_
-     (message "Неизвестный пк %s" hostname))))
+    (let ((hostname (string-trim (shell-command-to-string "hostname"))))
+      (pcase hostname
+        ("tsunami-nord"
+         (if (daemonp)
+             ;; Для демона: загружать тему при создании каждого фрейма
+             (add-hook 'after-make-frame-functions
+                       (lambda (frame)
+                         (with-selected-frame frame
+                           (load-theme 'nord t))))
+           ;; В обычном режиме загружаем тему сразу
+           (load-theme 'nord t)))
+        
+        ("thunder"
+         (load-theme 'breeze t))
+        ("tsunami"
+         (load-theme 'breeze t))
+        
+        (_
+         (message "Неизвестный пк %s" hostname))))
 #+end_src
 
 ** Русский ввод
